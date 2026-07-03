@@ -1,0 +1,146 @@
+REM scripts\InstallOrUpdate-All.bat
+@echo off
+chcp 65001 >nul
+setlocal enabledelayedexpansion
+
+REM ============================================================================
+REM   Параметр firststart
+REM ============================================================================
+set "FIRSTSTART=0"
+if "%1"=="1" set "FIRSTSTART=1"
+
+title Odysseus Portable — Установка / Обновление всех компонентов
+pushd %~dp0..
+
+REM ============================================================================
+REM   Получение ESC через PowerShell
+REM ============================================================================
+for /f %%a in ('powershell -NoProfile -Command "Write-Host ([char]27) -NoNewline"') do set "ESC=%%a"
+
+for %%F in ("%~dp0..") do set "ROOT_DIR=%%~fF"
+set "SCRIPTS_DIR=%ROOT_DIR%\scripts"
+
+REM ============================================================================
+REM   Изоляция данных
+REM ============================================================================
+set "DATA_DIR=%ROOT_DIR%\data"
+set "TEMP=%DATA_DIR%\temp"
+set "TMP=%DATA_DIR%\temp"
+set "APPDATA=%DATA_DIR%\appdata"
+set "LOCALAPPDATA=%DATA_DIR%\localappdata"
+set "HOME=%DATA_DIR%\home"
+set "USERPROFILE=%DATA_DIR%\home"
+
+if not exist "%DATA_DIR%" mkdir "%DATA_DIR%" 2>nul
+if not exist "%TEMP%" mkdir "%TEMP%" 2>nul
+if not exist "%APPDATA%" mkdir "%APPDATA%" 2>nul
+if not exist "%LOCALAPPDATA%" mkdir "%LOCALAPPDATA%" 2>nul
+if not exist "%HOME%" mkdir "%HOME%" 2>nul
+if not exist "%HOME%\Desktop" mkdir "%HOME%\Desktop" 2>nul
+
+REM ============================================================================
+REM   Проверка глобального Git (ОБЯЗАТЕЛЬНО!)
+REM ============================================================================
+git --version >nul 2>nul
+if !errorlevel! neq 0 (
+    cls
+    echo.
+    echo  %ESC%[1;31m################################################################################%ESC%[0m
+    echo  %ESC%[1;31m##                                                                            ##%ESC%[0m
+    echo  %ESC%[1;31m##%ESC%[0m                         %ESC%[1;37mGit не найден в системе%ESC%[0m                            %ESC%[1;31m##%ESC%[0m
+    echo  %ESC%[1;31m##                                                                            ##%ESC%[0m
+    echo  %ESC%[1;31m################################################################################%ESC%[0m
+    echo.
+    echo   %ESC%[1;31m[ОШИБКА] Git не установлен или не добавлен в PATH.%ESC%[0m
+    echo.
+    echo   %ESC%[1;33mДля работы со скриптами требуется глобальный Git.%ESC%[0m
+    echo.
+    echo   %ESC%[1;37mСкачайте и установите Git for Windows:%ESC%[0m
+    echo   %ESC%[1;36mhttps://git-scm.com/download/win%ESC%[0m
+    echo.
+    pause
+    popd
+    exit /b 1
+)
+
+cls
+echo.
+echo  %ESC%[1;36m################################################################################%ESC%[0m
+echo  %ESC%[1;36m##                                                                            ##%ESC%[0m
+echo  %ESC%[1;36m##%ESC%[0m          %ESC%[1;37mOdysseus Portable%ESC%[0m   —   %ESC%[1;33mУстановка / Обновление всех%ESC%[0m           %ESC%[1;36m##%ESC%[0m
+echo  %ESC%[1;36m##                                                                            ##%ESC%[0m
+echo  %ESC%[1;36m################################################################################%ESC%[0m
+echo.
+
+REM ============================================================================
+REM   ШАГ 1: Python
+REM ============================================================================
+echo   %ESC%[1;33m-%ESC%[0m %ESC%[1mУстановка / Обновление Python...%ESC%[0m
+echo.
+call "%SCRIPTS_DIR%\InstallOrUpdate-Python.bat" 1
+if errorlevel 1 (
+    echo   %ESC%[1;31m[ОШИБКА] Python не установился. Остановка.%ESC%[0m
+    pause
+    popd
+    exit /b 1
+)
+
+REM ============================================================================
+REM   ШАГ 1.5: Node.js
+REM ============================================================================
+echo.
+echo   %ESC%[1;33m-%ESC%[0m %ESC%[1mУстановка / Обновление Node.js...%ESC%[0m
+echo.
+call "%SCRIPTS_DIR%\InstallOrUpdate-NodeJS.bat" 1
+if errorlevel 1 (
+    echo   %ESC%[1;33m  .   Node.js не установился ^(не критично, Browser MCP будет недоступен^).%ESC%[0m
+)
+
+REM ============================================================================
+REM   ШАГ 2: Репозиторий
+REM ============================================================================
+echo.
+echo   %ESC%[1;33m-%ESC%[0m %ESC%[1mКлонирование / Обновление репозитория...%ESC%[0m
+echo.
+call "%SCRIPTS_DIR%\InstallOrUpdate-Repo.bat" 1
+if errorlevel 1 (
+    echo   %ESC%[1;31m[ОШИБКА] Репозиторий не клонировался. Остановка.%ESC%[0m
+    pause
+    popd
+    exit /b 1
+)
+
+REM ============================================================================
+REM   ШАГ 3: Зависимости
+REM ============================================================================
+echo.
+echo   %ESC%[1;33m-%ESC%[0m %ESC%[1mУстановка Python зависимостей...%ESC%[0m
+echo.
+call "%SCRIPTS_DIR%\InstallOrUpdate-Deps.bat" 1
+if errorlevel 1 (
+    echo   %ESC%[1;31m[ОШИБКА] Зависимости не установились. Остановка.%ESC%[0m
+    pause
+    popd
+    exit /b 1
+)
+
+cls
+echo.
+echo  %ESC%[1;32m  +   Все компоненты успешно установлены / обновлены.%ESC%[0m
+echo.
+echo   %ESC%[1;33mУстановленные компоненты:%ESC%[0m
+echo     %ESC%[2m- Python 3.12.10 (portable)%ESC%[0m
+echo     %ESC%[2m- Репозиторий Odysseus (dev-ветка)%ESC%[0m
+echo     %ESC%[2m- Python зависимости (FastAPI, ChromaDB, FastEmbed и др.)%ESC%[0m
+echo.
+
+if "%FIRSTSTART%"=="1" (
+    echo   %ESC%[1;33mТеперь можно запускать Odysseus через главное меню.%ESC%[0m
+    echo.
+    pause
+    popd
+    exit /b 0
+)
+
+popd
+exit /b 0

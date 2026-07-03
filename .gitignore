@@ -1,18 +1,50 @@
-# Build and Release Folders
-bin-debug/
-bin-release/
-[Oo]bj/
-[Bb]in/
+# ============================================================
+#               Odysseus Portable — .gitignore
+# ============================================================
 
-# Other files and folders
-.settings/
+# --- Изолированные данные (создаются скриптами) ---
+data/
+repo/
+models/
+python-*/
+python/
+output/
+logs/
+*.log
 
-# Executables
-*.swf
-*.air
-*.ipa
-*.apk
+# --- Генерируемые файлы ---
+*.wav
+*.mp3
+*.safetensors
+*.bin
+*.ckpt
+*.pth
 
-# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
-# should NOT be excluded as they contain compiler settings and other important
-# information for Eclipse / Flash Builder.
+# --- Windows ---
+*.exe
+*.dll
+*.zip
+*.7z
+
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# --- IDE ---
+.vs/
+.vscode/
+.idea/
+*.sln
+*.pyproj
+*.user
+
+# --- Пользовательские настройки (генерируются автоматом) ---
+scripts/Config.ini
+.env
+
+# --- Случайные папки кэша (если есть)
+Microsoft/
+pip/
