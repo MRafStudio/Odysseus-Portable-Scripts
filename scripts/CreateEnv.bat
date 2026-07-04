@@ -63,6 +63,7 @@ if "!CFG_ADMIN_PASSWORD!"=="" set "CFG_ADMIN_PASSWORD=admin"
 if "!CFG_APP_PORT!"=="" set "CFG_APP_PORT=7000"
 if "!CFG_SEARXNG_ENABLED!"=="" set "CFG_SEARXNG_ENABLED=0"
 if "!CFG_SEARCH_API!"=="" set "CFG_SEARCH_API=none"
+if "!CFG_SEARCH_KEY!"==" =" set "CFG_SEARCH_KEY="
 
 REM ============================================================================
 REM   Абсолютный путь к БД

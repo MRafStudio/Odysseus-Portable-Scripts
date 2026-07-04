@@ -4,7 +4,6 @@ chcp 65001 >nul
 setlocal enabledelayedexpansion
 
 for %%F in ("%~dp0..") do set "ROOT_DIR=%%~fF"
-set "ROOT_DIR=%ROOT_DIR:~0,-1%"
 set "SCRIPTS_DIR=%ROOT_DIR%\scripts"
 set "PYTHON_DIR=%ROOT_DIR%\python-3.12.10"
 set "REPO_DIR=%ROOT_DIR%\repo"

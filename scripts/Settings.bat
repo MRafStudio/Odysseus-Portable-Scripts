@@ -4,7 +4,6 @@ chcp 65001 >nul
 setlocal enabledelayedexpansion
 
 for %%F in ("%~dp0..") do set "ROOT_DIR=%%~fF"
-set "ROOT_DIR=%ROOT_DIR:~0,-1%"
 set "SCRIPTS_DIR=%ROOT_DIR%\scripts"
 set "CONFIG_FILE=%SCRIPTS_DIR%\Config.ini"
 set "REPO_DIR=%ROOT_DIR%\repo"
@@ -34,7 +33,7 @@ if not exist "%CONFIG_FILE%" (
 cls
 echo.
 echo  %ESC%[1;36m################################################################################%ESC%[0m
-echo  %ESC%[1;36m##%ESC%[0m %ESC%[1;37mOdysseus — Настройки%ESC%[0m %ESC%[1;36m##%ESC%[0m
+echo  %ESC%[1;36m##%ESC%[0m                             %ESC%[1;37mOdysseus — Настройки%ESC%[0m                           %ESC%[1;36m##%ESC%[0m
 echo  %ESC%[1;36m################################################################################%ESC%[0m
 echo.
 
@@ -60,7 +59,7 @@ if exist "%CONFIG_FILE%" (
     for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"AUTO_OPEN_BROWSER=" "%CONFIG_FILE%"') do set "CUR_BROWSER=%%b"
     for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"SEARXNG_ENABLED=" "%CONFIG_FILE%"') do set "CUR_SEARXNG=%%b"
     for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"SEARCH_API=" "%CONFIG_FILE%"') do set "CUR_SEARCH=%%b"
-    for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"SEARCH_API_KEY=" "%CONFIG_FILE%"') do set "CUR_SEARCH_KEY=%%b"
+    for /f "tokens=1,* delims==" %%a in ('findstr /B /C:"SEARCH_API_KEY=" "%CONFIG_FILE%"') do set "SEARCH_API_KEY=%%b"
 )
 
 set "CUR_LLM=%CUR_LLM: =%"
@@ -82,6 +81,8 @@ if "!CUR_PORT!"=="" set "CUR_PORT=7000"
 if "!CUR_BROWSER!"=="" set "CUR_BROWSER=1"
 if "!CUR_SEARXNG!"=="" set "CUR_SEARXNG=0"
 if "!CUR_SEARCH!"=="" set "CUR_SEARCH=none"
+if "!CUR_SEARCH_KEY!"==" =" set "CUR_SEARCH_KEY="
+if "!CUR_SEARCH_KEY!"=="" set "CUR_SEARCH_KEY="
 
 echo   %ESC%[1;33mТекущие настройки:%ESC%[0m
 echo     LLM Backend:    %ESC%[1;33m%CUR_LLM%%ESC%[0m
@@ -92,7 +93,11 @@ echo     Порт:           %ESC%[1;33m%CUR_PORT%%ESC%[0m
 echo     Auto-browser:   %ESC%[1;33m%CUR_BROWSER%%ESC%[0m
 echo     SearXNG:        %ESC%[1;33m%CUR_SEARXNG%%ESC%[0m
 echo     Search API:     %ESC%[1;33m%CUR_SEARCH%%ESC%[0m
-echo     Search API Key: %ESC%[1;33m%CUR_SEARCH_KEY%%ESC%[0m
+if "!CUR_SEARCH_KEY!"=="" (
+    echo     Search API Key: %ESC%[1;30m^(не задан^)%ESC%[0m
+) else (
+    echo     Search API Key: %ESC%[1;33m%CUR_SEARCH_KEY%%ESC%[0m
+)
 echo.
 
 echo   %ESC%[1;37m[1]%ESC%[0m LLM Backend
@@ -173,15 +178,12 @@ goto settings_menu
 :save_llm
 if not defined NEW_LLM goto settings_menu
 
+echo %SCRIPTS_DIR%
+pause
+
 call "%SCRIPTS_DIR%\CreateConfig.bat" "!NEW_LLM!" "!NEW_LLM_API!" "!CUR_AUTH!" "!CUR_PASS!" "!CUR_PORT!" "!CUR_BROWSER!" "!CUR_SEARXNG!" "!CUR_SEARCH!" "!CUR_SEARCH_KEY!"
 
 echo   %ESC%[1;32m  +   LLM Backend обновлён: !NEW_LLM! (!NEW_LLM_API!)%ESC%[0m
-
-REM Пересоздаём .env полностью
-if exist "%REPO_DIR%\.env" (
-    call "%SCRIPTS_DIR%\CreateEnv.bat"
-    echo   %ESC%[1;32m  +   .env синхронизирован%ESC%[0m
-)
 
 timeout /t 2 /nobreak >nul
 goto settings_menu
@@ -199,11 +201,6 @@ if "!NEW_LLM_API!"=="" goto settings_menu
 call "%SCRIPTS_DIR%\CreateConfig.bat" "!CUR_LLM!" "!NEW_LLM_API!" "!CUR_AUTH!" "!CUR_PASS!" "!CUR_PORT!" "!CUR_BROWSER!" "!CUR_SEARXNG!" "!CUR_SEARCH!" "!CUR_SEARCH_KEY!"
 
 echo   %ESC%[1;32m  +   LLM API URL обновлён: !NEW_LLM_API!%ESC%[0m
-
-if exist "%REPO_DIR%\.env" (
-    call "%SCRIPTS_DIR%\CreateEnv.bat"
-    echo   %ESC%[1;32m  +   .env синхронизирован%ESC%[0m
-)
 
 timeout /t 2 /nobreak >nul
 goto settings_menu
@@ -235,11 +232,6 @@ if "%auth_choice%"=="1" (
     
     call "%SCRIPTS_DIR%\CreateConfig.bat" "!CUR_LLM!" "!CUR_LLM_API!" "!NEW_AUTH!" "!CUR_PASS!" "!CUR_PORT!" "!CUR_BROWSER!" "!CUR_SEARXNG!" "!CUR_SEARCH!" "!CUR_SEARCH_KEY!"
     
-    if exist "%REPO_DIR%\.env" (
-        call "%SCRIPTS_DIR%\CreateEnv.bat"
-        echo   %ESC%[1;32m  +   .env синхронизирован%ESC%[0m
-    )
-    
     echo   %ESC%[1;32m  +   Auth: !NEW_AUTH!%ESC%[0m
 ) else (
     echo   %ESC%[1;33mОтменено.%ESC%[0m
@@ -260,11 +252,6 @@ call "%SCRIPTS_DIR%\CreateConfig.bat" "!CUR_LLM!" "!CUR_LLM_API!" "!CUR_AUTH!" "
 
 echo   %ESC%[1;32m  +   Admin пароль обновлён%ESC%[0m
 
-if exist "%REPO_DIR%\.env" (
-    call "%SCRIPTS_DIR%\CreateEnv.bat"
-    echo   %ESC%[1;32m  +   .env синхронизирован%ESC%[0m
-)
-
 timeout /t 2 /nobreak >nul
 goto settings_menu
 
@@ -281,11 +268,6 @@ if "!NEW_PORT!"=="" goto settings_menu
 call "%SCRIPTS_DIR%\CreateConfig.bat" "!CUR_LLM!" "!CUR_LLM_API!" "!CUR_AUTH!" "!CUR_PASS!" "!NEW_PORT!" "!CUR_BROWSER!" "!CUR_SEARXNG!" "!CUR_SEARCH!" "!CUR_SEARCH_KEY!"
 
 echo   %ESC%[1;32m  +   Порт обновлён: !NEW_PORT!%ESC%[0m
-
-if exist "%REPO_DIR%\.env" (
-    call "%SCRIPTS_DIR%\CreateEnv.bat"
-    echo   %ESC%[1;32m  +   .env синхронизирован%ESC%[0m
-)
 
 timeout /t 2 /nobreak >nul
 goto settings_menu
@@ -360,12 +342,6 @@ if not defined NEW_SEARCH goto settings_menu
 call "%SCRIPTS_DIR%\CreateConfig.bat" "!CUR_LLM!" "!CUR_LLM_API!" "!CUR_AUTH!" "!CUR_PASS!" "!CUR_PORT!" "!CUR_BROWSER!" "!CUR_SEARXNG!" "!NEW_SEARCH!" "!NEW_KEY!"
 
 echo   %ESC%[1;32m  +   Search API обновлён: !NEW_SEARCH!%ESC%[0m
-
-REM Пересоздаём .env полностью
-if exist "%REPO_DIR%\.env" (
-    call "%SCRIPTS_DIR%\CreateEnv.bat"
-    echo   %ESC%[1;32m  +   .env синхронизирован%ESC%[0m
-)
 
 timeout /t 2 /nobreak >nul
 goto settings_menu
