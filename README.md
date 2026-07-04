@@ -53,7 +53,7 @@ D:\Odysseus
 - **Microsoft C++ Build Tools** или **Visual Studio 2022 Build Tools** — для компиляции C-расширений (bcrypt, cryptography, lxml)
 - **Ollama** (опционально, но рекомендуется) — [https://ollama.com/download](https://ollama.com/download)
 
-## Установка
+## 📦 Установка
 
 1. Установите **Git for Windows** и **Microsoft C++ Build Tools** (если ещё не установлены)
 2. Запустите `Start.bat`
@@ -62,7 +62,7 @@ D:\Odysseus
 5. Убедитесь, что Ollama запущена (если используете)
 6. Запустите Odysseus через пункт **[*]** или **[Enter]**
 
-## Настройка
+## 🔧 Настройка
 
 - **LLM Backend**: Ollama (по умолчанию), LM Studio, OpenAI, или custom endpoint
 - **Порт**: 7000 (по умолчанию)
@@ -70,7 +70,7 @@ D:\Odysseus
 - **Web Search**: Brave API, Tavily, Serper, Google Custom Search, или none
 - **ChromaDB**: запускается автоматически на порту 8100
 
-## Что отличается от Docker-версии
+## 🔄 Чем отличается от Docker-версии
 
 | Docker | Portable |
 |--------|----------|
@@ -80,15 +80,16 @@ D:\Odysseus
 | ntfy контейнер | Не используется |
 | PUID/PGID | Не нужно (Windows) |
 | Linux-пути | Windows-пути |
+| .env вручную | .env генерируется автоматически из Config.ini |
 
-## Примечания
+## 📝 Примечания
 
 - **Python 3.12** — оптимальный выбор. Python 3.13+ ломает `basicsr/gfpgan/facexlib` (PEP 667).
 - **Node.js 20.11.0** — portable, устанавливается автоматически через `InstallOrUpdate-NodeJS.bat`.
 - `requirements.txt` автоматически фиксится при установке: удаляется `httpx2`, `chromadb-client` → `chromadb`, добавляется `python-magic-bin`.
 - Все данные изолированы в `data\` — ничего не пишется в систему.
 
-## Устранение неполадок
+## 🛠️ Устранение неполадок
 
 ### "Не удалось установить зависимости"
 - Установите **Microsoft C++ Build Tools** с компонентом "Desktop development with C++"
@@ -105,7 +106,7 @@ D:\Odysseus
 ### "ModuleNotFoundError: No module named '...'"
 - Запустите переустановку зависимостей через DevTools → [2]
 
-## 📝 Лицензия
+## 📄 Лицензия
 
 Odysseus: AGPL-3.0-or-later
 Скрипты: MIT (RafStudio)
