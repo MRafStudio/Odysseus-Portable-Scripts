@@ -9,6 +9,10 @@ pushd %~dp0
 REM ============================================================================
 REM Пути (относительно Start.bat)
 REM ============================================================================
+REM Путь к папке scripts (где лежит этот bat)
+set "SCRIPTS_DIR=%~dp0"
+if "%SCRIPTS_DIR:~-1%"=="\" set "SCRIPTS_DIR=%SCRIPTS_DIR:~0,-1%"
+
 for %%F in ("%~dp0") do set "ROOT_DIR=%%~fF"
 set "ROOT_DIR=%ROOT_DIR:~0,-1%"
 set "SCRIPTS_DIR=%ROOT_DIR%\scripts"
@@ -201,17 +205,9 @@ set "SEARCH_API=%SEARCH_API: =%"
 set "SEARCH_API_KEY=%SEARCH_API_KEY: =%"
 
 REM ============================================================================
-REM   Проверка / создание .env
+REM   Проверка / создание .env — НЕТ! Делегируем Start-Odysseus.bat
 REM ============================================================================
-if not exist "%REPO_DIR%\.env" (
-    echo   %ESC%[1;33m  .   Создание .env файла...%ESC%[0m
-    call "%SCRIPTS_DIR%\CreateEnv.bat"
-    if exist "%REPO_DIR%\.env" (
-        echo   %ESC%[1;32m  +   .env создан%ESC%[0m
-    ) else (
-        echo   %ESC%[1;31m  [ПРЕДУПРЕЖДЕНИЕ] .env не создан%ESC%[0m
-    )
-)
+REM .env будет создан при первом запуске Odysseus, когда repo уже клонирован
 
 :menu
 REM Перечитываем Config.ini (мог измениться)

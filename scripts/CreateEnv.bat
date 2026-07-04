@@ -1,13 +1,30 @@
 REM scripts\CreateEnv.bat
-REM Создаёт .env файл по шаблону из репозитория с актуальными значениями
 @echo off
+chcp 65001 >nul
+REM Создаёт .env файл по шаблону из репозитория с актуальными значениями
 setlocal enabledelayedexpansion
 
-for %%F in ("%~dp0..") do set "ROOT_DIR=%%~fF"
+REM Путь к папке scripts (где лежит этот bat)
+set "SCRIPTS_DIR=%~dp0"
+if "%SCRIPTS_DIR:~-1%"=="\" set "SCRIPTS_DIR=%SCRIPTS_DIR:~0,-1%"
+
+REM Корень проекта = папка выше scripts
+for %%F in ("%SCRIPTS_DIR%\..") do set "ROOT_DIR=%%~fF"
+
 set "REPO_DIR=%ROOT_DIR%\repo"
 set "DATA_DIR=%ROOT_DIR%\data"
 set "ENV_FILE=%REPO_DIR%\.env"
-set "CONFIG_FILE=%ROOT_DIR%\scripts\Config.ini"
+set "CONFIG_FILE=%SCRIPTS_DIR%\Config.ini"
+
+REM ============================================================================
+REM   Проверка существования repo
+REM ============================================================================
+if not exist "%REPO_DIR%" (
+    echo [ERROR] Репозиторий не найден: %REPO_DIR%
+    echo [ERROR] Сначала клонируйте репозиторий через меню [1]
+    pause
+    exit /b 1
+)
 
 REM ============================================================================
 REM   Читаем значения из Config.ini (если есть)
@@ -184,5 +201,5 @@ if /I "!CFG_SEARCH_API!"=="google" (
 >> "%ENV_FILE%" echo ODYSSEUS_CHAT_UPLOAD_MAX_BYTES=10485760
 >> "%ENV_FILE%" echo ODYSSEUS_GALLERY_UPLOAD_MAX_BYTES=104857600
 >> "%ENV_FILE%" echo.
-
+pause
 exit /b 0

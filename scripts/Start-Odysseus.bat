@@ -76,7 +76,7 @@ set "LLM_API_URL=%LLM_API_URL: =%"
 cls
 echo.
 echo  %ESC%[1;36m################################################################################%ESC%[0m
-echo  %ESC%[1;36m##%ESC%[0m      %ESC%[1;37mOdysseus — Запуск%ESC%[0m     %ESC%[1;36m##%ESC%[0m
+echo  %ESC%[1;36m##%ESC%[0m                              %ESC%[1;37mOdysseus — Запуск%ESC%[0m                             %ESC%[1;36m##%ESC%[0m
 echo  %ESC%[1;36m################################################################################%ESC%[0m
 echo.
 
@@ -84,12 +84,21 @@ REM ============================================================================
 REM   Проверка / создание .env
 REM ============================================================================
 if not exist "%REPO_DIR%\.env" (
+    if not exist "%REPO_DIR%\.git" (
+        echo   %ESC%[1;31m[ОШИБКА] Репозиторий не клонирован!%ESC%[0m
+        echo   %ESC%[33m       Запустите установку через главное меню [1]%ESC%[0m
+        echo.
+        pause
+        exit /b 1
+    )
     echo   %ESC%[1;33m  .   Создание .env файла...%ESC%[0m
     call "%SCRIPTS_DIR%\CreateEnv.bat"
     if exist "%REPO_DIR%\.env" (
         echo   %ESC%[1;32m  +   .env создан%ESC%[0m
     ) else (
-        echo   %ESC%[1;31m  [ПРЕДУПРЕЖДЕНИЕ] .env не создан%ESC%[0m
+        echo   %ESC%[1;31m  [ОШИБКА] .env не создан%ESC%[0m
+        pause
+        exit /b 1
     )
     echo.
 )

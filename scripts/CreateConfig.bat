@@ -1,10 +1,16 @@
-@REM CreateConfig.bat — Создание Config.ini для Odysseus Portable
+REM scripts\CreateConfig.bat
+REM Создание Config.ini для Odysseus Portable
 @echo off
+chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-for %%F in ("%~dp0..") do set "ROOT_DIR=%%~fF"
-set "ROOT_DIR=%ROOT_DIR:~0,-1%"
-set "SCRIPTS_DIR=%ROOT_DIR%\scripts"
+REM Путь к папке scripts (где лежит этот bat)
+set "SCRIPTS_DIR=%~dp0"
+if "%SCRIPTS_DIR:~-1%"=="\" set "SCRIPTS_DIR=%SCRIPTS_DIR:~0,-1%"
+
+REM Корень проекта = папка выше scripts
+for %%F in ("%SCRIPTS_DIR%\..") do set "ROOT_DIR=%%~fF"
+
 set "CONFIG_FILE=%SCRIPTS_DIR%\Config.ini"
 
 REM ============================================================================
