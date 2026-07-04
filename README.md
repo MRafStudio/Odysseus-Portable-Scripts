@@ -1,6 +1,7 @@
 # Odysseus Portable — Windows Scripts
 
 Self-hosted AI workspace (Odysseus) — портативная Windows-сборка без Docker.
+Оригинальный проект на [Odysseus](https://github.com/pewdiepie-archdaemon/odysseus).
 
 ## 🚀 Быстрый старт
 
