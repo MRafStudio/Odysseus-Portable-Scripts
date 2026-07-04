@@ -2,7 +2,16 @@
 
 Self-hosted AI workspace (Odysseus) — портативная Windows-сборка без Docker.
 
-## Структура
+## 🚀 Быстрый старт
+
+1. Склонируйте этот репозиторий в `D:\Odysseus` например:
+```text
+     cd D:/
+     git clone https://github.com/MRafStudio/Odysseus-Portable-Scripts.git Odysseus
+     cd Odysseus
+```
+
+## 📁 Структура
 
 ```
 D:\Odysseus
@@ -35,7 +44,7 @@ D:\Odysseus
     └── app.db                    # SQLite база данных
 ```
 
-## Требования
+## ⚙️ Требования
 
 - **Windows 10/11** (x64)
 - **Git for Windows** (глобальный, обязательно) — [https://git-scm.com/download/win](https://git-scm.com/download/win)
@@ -94,7 +103,7 @@ D:\Odysseus
 ### "ModuleNotFoundError: No module named '...'"
 - Запустите переустановку зависимостей через DevTools → [2]
 
-## Лицензия
+## 📝 Лицензия
 
 Odysseus: AGPL-3.0-or-later
 Скрипты: MIT (RafStudio)
