@@ -74,7 +74,7 @@ if not exist "%REPO_DIR%\requirements.txt" (
 REM ============================================================================
 REM   Шаг 1: Фикс requirements.txt (с кэшированием по дате)
 REM ============================================================================
-echo   %ESC%[1;33m[1/4]%ESC%[0m %ESC%[1mИсправление requirements.txt...%ESC%[0m
+echo   %ESC%[1;33m[1/5]%ESC%[0m %ESC%[1mИсправление requirements.txt...%ESC%[0m
 
 set "REQ_ORIG=%REPO_DIR%\requirements.txt"
 set "REQ_FIXED=%REPO_DIR%\requirements-fixed.txt"
@@ -112,7 +112,7 @@ REM ============================================================================
 REM   Шаг 2: Обновление pip/setuptools/wheel
 REM ============================================================================
 echo.
-echo   %ESC%[1;33m[2/4]%ESC%[0m %ESC%[1mОбновление pip, setuptools, wheel...%ESC%[0m
+echo   %ESC%[1;33m[2/5]%ESC%[0m %ESC%[1mОбновление pip, setuptools, wheel...%ESC%[0m
 
 "%PYTHON_EXE%" -m pip install --upgrade pip setuptools wheel --no-warn-script-location --cache-dir "%PIP_CACHE_DIR%"
 if !errorlevel! neq 0 (
@@ -125,7 +125,7 @@ REM ============================================================================
 REM   Шаг 3: Установка зависимостей (ТОЛЬКО в консоль, без логов)
 REM ============================================================================
 echo.
-echo   %ESC%[1;33m[3/4]%ESC%[0m %ESC%[1mУстановка зависимостей (это может занять 5-15 минут)...%ESC%[0m
+echo   %ESC%[1;33m[3/5]%ESC%[0m %ESC%[1mУстановка зависимостей (это может занять 5-15 минут)...%ESC%[0m
 
 "%PYTHON_EXE%" -m pip install -r "%REQ_FIXED%" --no-warn-script-location --cache-dir "%PIP_CACHE_DIR%"
 
@@ -144,132 +144,10 @@ if !errorlevel! neq 0 (
 echo   %ESC%[1;32m  +   Зависимости установлены%ESC%[0m
 
 REM ============================================================================
-REM   Шаг 4: Создание .env (с абсолютными путями!)
+REM   Шаг 4: Опциональные зависимости (ТОЛЬКО в консоль, без логов)
 REM ============================================================================
 echo.
-echo   %ESC%[1;33m[4/4]%ESC%[0m %ESC%[1mСоздание .env файла...%ESC%[0m
-
-set "ENV_FILE=%REPO_DIR%\.env"
-set "CONFIG_FILE=%ROOT_DIR%\scripts\Config.ini"
-
-if exist "%ENV_FILE%" (
-    echo   %ESC%[1;32m  +   .env уже существует ^(пропускаем^)%ESC%[0m
-    goto deps_done
-)
-
-REM Читаем настройки из Config.ini
-set "CFG_LLM_BACKEND=ollama"
-set "CFG_OLLAMA_URL=http://127.0.0.1:11434/v1"
-set "CFG_AUTH_ENABLED=true"
-set "CFG_ADMIN_PASSWORD=admin"
-set "CFG_APP_PORT=7000"
-set "CFG_SEARXNG_ENABLED=0"
-set "CFG_SEARCH_API=none"
-set "CFG_SEARCH_API_KEY="
-
-if exist "%CONFIG_FILE%" (
-    for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"LLM_BACKEND=" "%CONFIG_FILE%"') do set "CFG_LLM_BACKEND=%%b"
-    for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"OLLAMA_URL=" "%CONFIG_FILE%"') do set "CFG_OLLAMA_URL=%%b"
-    for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"AUTH_ENABLED=" "%CONFIG_FILE%"') do set "CFG_AUTH_ENABLED=%%b"
-    for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"ADMIN_PASSWORD=" "%CONFIG_FILE%"') do set "CFG_ADMIN_PASSWORD=%%b"
-    for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"APP_PORT=" "%CONFIG_FILE%"') do set "CFG_APP_PORT=%%b"
-    for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"SEARXNG_ENABLED=" "%CONFIG_FILE%"') do set "CFG_SEARXNG_ENABLED=%%b"
-    for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"SEARCH_API=" "%CONFIG_FILE%"') do set "CFG_SEARCH_API=%%b"
-    for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"SEARCH_API_KEY=" "%CONFIG_FILE%"') do set "CFG_SEARCH_API_KEY=%%b"
-)
-
-set "CFG_LLM_BACKEND=%CFG_LLM_BACKEND: =%"
-set "CFG_OLLAMA_URL=%CFG_OLLAMA_URL: =%"
-set "CFG_AUTH_ENABLED=%CFG_AUTH_ENABLED: =%"
-set "CFG_ADMIN_PASSWORD=%CFG_ADMIN_PASSWORD: =%"
-set "CFG_APP_PORT=%CFG_APP_PORT: =%"
-set "CFG_SEARXNG_ENABLED=%CFG_SEARXNG_ENABLED: =%"
-set "CFG_SEARCH_API=%CFG_SEARCH_API: =%"
-set "CFG_SEARCH_API_KEY=%CFG_SEARCH_API_KEY: =%"
-
-if "!CFG_LLM_BACKEND!"=="" set "CFG_LLM_BACKEND=ollama"
-if "!CFG_OLLAMA_URL!"=="" set "CFG_OLLAMA_URL=http://127.0.0.1:11434/v1"
-if "!CFG_AUTH_ENABLED!"=="" set "CFG_AUTH_ENABLED=true"
-if "!CFG_ADMIN_PASSWORD!"=="" set "CFG_ADMIN_PASSWORD=admin"
-if "!CFG_APP_PORT!"=="" set "CFG_APP_PORT=7000"
-if "!CFG_SEARXNG_ENABLED!"=="" set "CFG_SEARXNG_ENABLED=0"
-if "!CFG_SEARCH_API!"=="" set "CFG_SEARCH_API=none"
-if "!CFG_SEARCH_API_KEY!"=="" set "CFG_SEARCH_API_KEY="
-
-REM Абсолютный путь к БД (Windows-формат с прямыми слэшами для SQLite)
-set "DB_PATH=%DATA_DIR%\app.db"
-set "DB_PATH=%DB_PATH:\=/%"
-
-REM Создаём .env построчно
->> "%ENV_FILE%" echo # Odysseus Portable — Environment Configuration
->> "%ENV_FILE%" echo.
->> "%ENV_FILE%" echo # --- LLM ---
->> "%ENV_FILE%" echo LLM_HOST=localhost
->> "%ENV_FILE%" echo OLLAMA_BASE_URL=!CFG_OLLAMA_URL!
->> "%ENV_FILE%" echo.
->> "%ENV_FILE%" echo # --- Database ---
->> "%ENV_FILE%" echo DATABASE_URL=sqlite:///%DB_PATH%
->> "%ENV_FILE%" echo.
->> "%ENV_FILE%" echo # --- Auth ---
->> "%ENV_FILE%" echo AUTH_ENABLED=!CFG_AUTH_ENABLED!
->> "%ENV_FILE%" echo ODYSSEUS_ADMIN_USER=admin
->> "%ENV_FILE%" echo ODYSSEUS_ADMIN_PASSWORD=!CFG_ADMIN_PASSWORD!
->> "%ENV_FILE%" echo LOCALHOST_BYPASS=false
->> "%ENV_FILE%" echo SECURE_COOKIES=false
->> "%ENV_FILE%" echo ALLOWED_ORIGINS=http://localhost,http://127.0.0.1
->> "%ENV_FILE%" echo.
->> "%ENV_FILE%" echo # --- App ---
->> "%ENV_FILE%" echo APP_BIND=127.0.0.1
->> "%ENV_FILE%" echo APP_PORT=!CFG_APP_PORT!
->> "%ENV_FILE%" echo.
->> "%ENV_FILE%" echo # --- ChromaDB ---
->> "%ENV_FILE%" echo CHROMADB_HOST=127.0.0.1
->> "%ENV_FILE%" echo CHROMADB_PORT=8100
->> "%ENV_FILE%" echo.
->> "%ENV_FILE%" echo # --- Embeddings ---
->> "%ENV_FILE%" echo FASTEMBED_MODEL=sentence-transformers/all-MiniLM-L6-v2
->> "%ENV_FILE%" echo FASTEMBED_CACHE_PATH=%DATA_DIR%\fastembed
->> "%ENV_FILE%" echo.
->> "%ENV_FILE%" echo # --- Search ---
-if "!CFG_SEARXNG_ENABLED!"=="1" (
-    >> "%ENV_FILE%" echo SEARXNG_INSTANCE=http://127.0.0.1:8080
-) else (
-    >> "%ENV_FILE%" echo # SEARXNG_INSTANCE=http://127.0.0.1:8080
-)
-if "!CFG_SEARCH_API!"=="brave" (
-    >> "%ENV_FILE%" echo DATA_BRAVE_API_KEY=!CFG_SEARCH_API_KEY!
-) else (
-    >> "%ENV_FILE%" echo # DATA_BRAVE_API_KEY=
-)
-if "!CFG_SEARCH_API!"=="tavily" (
-    >> "%ENV_FILE%" echo TAVILY_API_KEY=!CFG_SEARCH_API_KEY!
-) else (
-    >> "%ENV_FILE%" echo # TAVILY_API_KEY=
-)
-if "!CFG_SEARCH_API!"=="serper" (
-    >> "%ENV_FILE%" echo SERPER_API_KEY=!CFG_SEARCH_API_KEY!
-) else (
-    >> "%ENV_FILE%" echo # SERPER_API_KEY=
-)
->> "%ENV_FILE%" echo.
->> "%ENV_FILE%" echo # --- Misc ---
->> "%ENV_FILE%" echo CLEANUP_INTERVAL_HOURS=24
->> "%ENV_FILE%" echo ODYSSEUS_INPROCESS_POLLERS=1
->> "%ENV_FILE%" echo ODYSSEUS_INPROCESS_TASKS=1
->> "%ENV_FILE%" echo ODYSSEUS_SCRIPT_HOST=localhost
->> "%ENV_FILE%" echo.
->> "%ENV_FILE%" echo # --- Upload limits ---
->> "%ENV_FILE%" echo ODYSSEUS_CHAT_UPLOAD_MAX_BYTES=10485760
->> "%ENV_FILE%" echo ODYSSEUS_GALLERY_UPLOAD_MAX_BYTES=104857600
->> "%ENV_FILE%" echo.
-
-echo   %ESC%[1;32m  +   .env создан (абсолютные пути)%ESC%[0m
-
-REM ============================================================================
-REM   Шаг 5: Опциональные зависимости (ТОЛЬКО в консоль, без логов)
-REM ============================================================================
-echo.
-echo   %ESC%[1;33m[5/5]%ESC%[0m %ESC%[1mУстановка опциональных зависимостей...%ESC%[0m
+echo   %ESC%[1;33m[4/5]%ESC%[0m %ESC%[1mУстановка опциональных зависимостей...%ESC%[0m
 echo   %ESC%[2m       ddgs (DuckDuckGo поиск), PyMuPDF (PDF формы), markitdown (Office/EPUB)%ESC%[0m
 
 "%PYTHON_EXE%" -m pip install ddgs PyMuPDF "markitdown[all]" --no-warn-script-location --cache-dir "%PIP_CACHE_DIR%"
@@ -281,6 +159,18 @@ if !errorlevel! neq 0 (
 )
 
 :deps_done
+REM ============================================================================
+REM   Шаг 5: Проверка / создание .env (делегируем Start-Odysseus.bat)
+REM ============================================================================
+echo.
+echo   %ESC%[1;33m[5/5]%ESC%[0m %ESC%[1mПроверка .env файла...%ESC%[0m
+
+if exist "%REPO_DIR%\.env" (
+    echo   %ESC%[1;32m  +   .env уже существует%ESC%[0m
+) else (
+    echo   %ESC%[1;33m  .   .env будет создан при первом запуске Odysseus%ESC%[0m
+)
+
 echo.
 echo  %ESC%[36m────────────────────────────────────────────────────────────────────────────────%ESC%[0m
 echo   %ESC%[1;32mPython зависимости установлены!%ESC%[0m

@@ -9,6 +9,9 @@ set "SCRIPTS_DIR=%ROOT_DIR%\scripts"
 set "CONFIG_FILE=%SCRIPTS_DIR%\Config.ini"
 set "REPO_DIR=%ROOT_DIR%\repo"
 
+REM ============================================================================
+REM   PowerShell wrapper (для ESC и чтения, НЕ для записи!)
+REM ============================================================================
 set "PS_WRAPPER=%TEMP%\ps_wrapper.bat"
 (
     echo @echo off
@@ -16,6 +19,16 @@ set "PS_WRAPPER=%TEMP%\ps_wrapper.bat"
 ) > "%PS_WRAPPER%"
 
 for /f "usebackq" %%a in (`%PS_WRAPPER% -Command "Write-Host ([char]27) -NoNewline"`) do set "ESC=%%a"
+
+REM ============================================================================
+REM   Проверка / создание Config.ini
+REM ============================================================================
+if not exist "%CONFIG_FILE%" (
+    echo   %ESC%[1;33mConfig.ini не найден. Создание...%ESC%[0m
+    call "%SCRIPTS_DIR%\CreateConfig.bat"
+    echo   %ESC%[1;32m  +   Config.ini создан.%ESC%[0m
+    timeout /t 1 /nobreak >nul
+)
 
 :settings_menu
 cls
@@ -25,9 +38,11 @@ echo  %ESC%[1;36m##%ESC%[0m %ESC%[1;37mOdysseus — Настройки%ESC%[0m %
 echo  %ESC%[1;36m################################################################################%ESC%[0m
 echo.
 
-REM Читаем текущие значения
+REM ============================================================================
+REM   Читаем текущие значения из Config.ini
+REM ============================================================================
 set "CUR_LLM=ollama"
-set "CUR_OLLAMA=http://127.0.0.1:11434/v1"
+set "CUR_LLM_API=http://127.0.0.1:11434/v1"
 set "CUR_AUTH=true"
 set "CUR_PASS=admin"
 set "CUR_PORT=7000"
@@ -38,7 +53,7 @@ set "CUR_SEARCH_KEY="
 
 if exist "%CONFIG_FILE%" (
     for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"LLM_BACKEND=" "%CONFIG_FILE%"') do set "CUR_LLM=%%b"
-    for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"OLLAMA_URL=" "%CONFIG_FILE%"') do set "CUR_OLLAMA=%%b"
+    for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"LLM_API_URL=" "%CONFIG_FILE%"') do set "CUR_LLM_API=%%b"
     for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"AUTH_ENABLED=" "%CONFIG_FILE%"') do set "CUR_AUTH=%%b"
     for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"ADMIN_PASSWORD=" "%CONFIG_FILE%"') do set "CUR_PASS=%%b"
     for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"APP_PORT=" "%CONFIG_FILE%"') do set "CUR_PORT=%%b"
@@ -49,7 +64,7 @@ if exist "%CONFIG_FILE%" (
 )
 
 set "CUR_LLM=%CUR_LLM: =%"
-set "CUR_OLLAMA=%CUR_OLLAMA: =%"
+set "CUR_LLM_API=%CUR_LLM_API: =%"
 set "CUR_AUTH=%CUR_AUTH: =%"
 set "CUR_PASS=%CUR_PASS: =%"
 set "CUR_PORT=%CUR_PORT: =%"
@@ -58,9 +73,19 @@ set "CUR_SEARXNG=%CUR_SEARXNG: =%"
 set "CUR_SEARCH=%CUR_SEARCH: =%"
 set "CUR_SEARCH_KEY=%CUR_SEARCH_KEY: =%"
 
+REM Дефолты если пусто
+if "!CUR_LLM!"=="" set "CUR_LLM=ollama"
+if "!CUR_LLM_API!"=="" set "CUR_LLM_API=http://127.0.0.1:11434/v1"
+if "!CUR_AUTH!"=="" set "CUR_AUTH=true"
+if "!CUR_PASS!"=="" set "CUR_PASS=admin"
+if "!CUR_PORT!"=="" set "CUR_PORT=7000"
+if "!CUR_BROWSER!"=="" set "CUR_BROWSER=1"
+if "!CUR_SEARXNG!"=="" set "CUR_SEARXNG=0"
+if "!CUR_SEARCH!"=="" set "CUR_SEARCH=none"
+
 echo   %ESC%[1;33mТекущие настройки:%ESC%[0m
 echo     LLM Backend:    %ESC%[1;33m%CUR_LLM%%ESC%[0m
-echo     Ollama URL:     %ESC%[1;33m%CUR_OLLAMA%%ESC%[0m
+echo     LLM API URL:    %ESC%[1;33m%CUR_LLM_API%%ESC%[0m
 echo     Auth:           %ESC%[1;33m%CUR_AUTH%%ESC%[0m
 echo     Admin пароль:   %ESC%[1;33m%CUR_PASS%%ESC%[0m
 echo     Порт:           %ESC%[1;33m%CUR_PORT%%ESC%[0m
@@ -71,7 +96,7 @@ echo     Search API Key: %ESC%[1;33m%CUR_SEARCH_KEY%%ESC%[0m
 echo.
 
 echo   %ESC%[1;37m[1]%ESC%[0m LLM Backend
-echo   %ESC%[1;37m[2]%ESC%[0m Ollama URL
+echo   %ESC%[1;37m[2]%ESC%[0m LLM API URL
 echo   %ESC%[1;37m[3]%ESC%[0m Auth (вкл/выкл)
 echo   %ESC%[1;37m[4]%ESC%[0m Admin пароль
 echo   %ESC%[1;37m[5]%ESC%[0m Порт приложения
@@ -86,7 +111,7 @@ set "choice=%choice: =%"
 
 if "%choice%"=="0" exit /b 0
 if "%choice%"=="1" goto set_llm
-if "%choice%"=="2" goto set_ollama
+if "%choice%"=="2" goto set_llm_api
 if "%choice%"=="3" goto set_auth
 if "%choice%"=="4" goto set_pass
 if "%choice%"=="5" goto set_port
@@ -95,6 +120,9 @@ if "%choice%"=="7" goto set_search
 
 goto settings_menu
 
+REM ============================================================================
+REM   set_llm — изменяем backend и URL
+REM ============================================================================
 :set_llm
 cls
 echo.
@@ -112,57 +140,77 @@ set "llm_choice=%llm_choice: =%"
 
 if "%llm_choice%"=="1" (
     set "NEW_LLM=ollama"
-    set "NEW_URL=http://127.0.0.1:11434/v1"
+    set "NEW_LLM_API=http://127.0.0.1:11434/v1"
+    goto save_llm
 )
 if "%llm_choice%"=="2" (
     set "NEW_LLM=lmstudio"
-    set "NEW_URL=http://127.0.0.1:1234/v1"
+    set "NEW_LLM_API=http://127.0.0.1:1234/v1"
+    goto save_llm
 )
 if "%llm_choice%"=="3" (
     set "NEW_LLM=koboldcpp"
-    set "NEW_URL=http://127.0.0.1:5001/v1"
+    set "NEW_LLM_API=http://127.0.0.1:5001/v1"
+    goto save_llm
 )
 if "%llm_choice%"=="4" (
     set "NEW_LLM=openai"
-    set /p "NEW_URL=%ESC%[33mВведите OpenAI API URL (или Enter для https://api.openai.com/v1): %ESC%[0m"
-    if "!NEW_URL!"=="" set "NEW_URL=https://api.openai.com/v1"
+    set /p "NEW_LLM_API=%ESC%[33mВведите OpenAI API URL (или Enter для https://api.openai.com/v1): %ESC%[0m"
+    if "!NEW_LLM_API!"=="" set "NEW_LLM_API=https://api.openai.com/v1"
     set /p "OPENAI_KEY=%ESC%[33mВведите OpenAI API Key: %ESC%[0m"
+    goto save_llm
 )
 if "%llm_choice%"=="5" (
     set "NEW_LLM=custom"
-    set /p "NEW_URL=%ESC%[33mВведите URL endpoint (например http://192.168.1.100:8000/v1): %ESC%[0m"
+    set /p "NEW_LLM_API=%ESC%[33mВведите URL endpoint (например http://192.168.1.100:8000/v1): %ESC%[0m"
+    goto save_llm
 )
 
+echo   %ESC%[1;33mОтменено.%ESC%[0m
+timeout /t 1 /nobreak >nul
+goto settings_menu
+
+:save_llm
 if not defined NEW_LLM goto settings_menu
 
-%PS_WRAPPER% -Command "(Get-Content '%CONFIG_FILE%') -replace '^LLM_BACKEND=.*', 'LLM_BACKEND=!NEW_LLM!' | Set-Content '%CONFIG_FILE%'"
-%PS_WRAPPER% -Command "(Get-Content '%CONFIG_FILE%') -replace '^OLLAMA_URL=.*', 'OLLAMA_URL=!NEW_URL!' | Set-Content '%CONFIG_FILE%'"
+call "%SCRIPTS_DIR%\CreateConfig.bat" "!NEW_LLM!" "!NEW_LLM_API!" "!CUR_AUTH!" "!CUR_PASS!" "!CUR_PORT!" "!CUR_BROWSER!" "!CUR_SEARXNG!" "!CUR_SEARCH!" "!CUR_SEARCH_KEY!"
 
-REM Обновляем .env
+echo   %ESC%[1;32m  +   LLM Backend обновлён: !NEW_LLM! (!NEW_LLM_API!)%ESC%[0m
+
+REM Пересоздаём .env полностью
 if exist "%REPO_DIR%\.env" (
-    %PS_WRAPPER% -Command "(Get-Content '%REPO_DIR%\.env') -replace '^OLLAMA_BASE_URL=.*', 'OLLAMA_BASE_URL=!NEW_URL!' | Set-Content '%REPO_DIR%\.env'"
+    call "%SCRIPTS_DIR%\CreateEnv.bat"
+    echo   %ESC%[1;32m  +   .env синхронизирован%ESC%[0m
 )
 
-echo   %ESC%[1;32m  +   LLM Backend обновлён: !NEW_LLM! (!NEW_URL!)%ESC%[0m
 timeout /t 2 /nobreak >nul
 goto settings_menu
 
-:set_ollama
+REM ============================================================================
+REM   set_llm_api — изменяем только URL
+REM ============================================================================
+:set_llm_api
 cls
 echo.
-set /p "NEW_URL=%ESC%[33mВведите Ollama URL (например http://127.0.0.1:11434/v1): %ESC%[0m"
-set "NEW_URL=%NEW_URL: =%"
-if "!NEW_URL!"=="" goto settings_menu
+set /p "NEW_LLM_API=%ESC%[33mВведите LLM API URL (например http://127.0.0.1:11434/v1): %ESC%[0m"
+set "NEW_LLM_API=%NEW_LLM_API: =%"
+if "!NEW_LLM_API!"=="" goto settings_menu
 
-%PS_WRAPPER% -Command "(Get-Content '%CONFIG_FILE%') -replace '^OLLAMA_URL=.*', 'OLLAMA_URL=!NEW_URL!' | Set-Content '%CONFIG_FILE%'"
+call "%SCRIPTS_DIR%\CreateConfig.bat" "!CUR_LLM!" "!NEW_LLM_API!" "!CUR_AUTH!" "!CUR_PASS!" "!CUR_PORT!" "!CUR_BROWSER!" "!CUR_SEARXNG!" "!CUR_SEARCH!" "!CUR_SEARCH_KEY!"
+
+echo   %ESC%[1;32m  +   LLM API URL обновлён: !NEW_LLM_API!%ESC%[0m
+
 if exist "%REPO_DIR%\.env" (
-    %PS_WRAPPER% -Command "(Get-Content '%REPO_DIR%\.env') -replace '^OLLAMA_BASE_URL=.*', 'OLLAMA_BASE_URL=!NEW_URL!' | Set-Content '%REPO_DIR%\.env'"
+    call "%SCRIPTS_DIR%\CreateEnv.bat"
+    echo   %ESC%[1;32m  +   .env синхронизирован%ESC%[0m
 )
 
-echo   %ESC%[1;32m  +   Ollama URL обновлён: !NEW_URL!%ESC%[0m
 timeout /t 2 /nobreak >nul
 goto settings_menu
 
+REM ============================================================================
+REM   set_auth — вкл/выкл авторизацию
+REM ============================================================================
 :set_auth
 cls
 echo.
@@ -184,30 +232,45 @@ if "%auth_choice%"=="1" (
     ) else (
         set "NEW_AUTH=true"
     )
-    %PS_WRAPPER% -Command "(Get-Content '%CONFIG_FILE%') -replace '^AUTH_ENABLED=.*', 'AUTH_ENABLED=!NEW_AUTH!' | Set-Content '%CONFIG_FILE%'"
+    
+    call "%SCRIPTS_DIR%\CreateConfig.bat" "!CUR_LLM!" "!CUR_LLM_API!" "!NEW_AUTH!" "!CUR_PASS!" "!CUR_PORT!" "!CUR_BROWSER!" "!CUR_SEARXNG!" "!CUR_SEARCH!" "!CUR_SEARCH_KEY!"
+    
     if exist "%REPO_DIR%\.env" (
-        %PS_WRAPPER% -Command "(Get-Content '%REPO_DIR%\.env') -replace '^AUTH_ENABLED=.*', 'AUTH_ENABLED=!NEW_AUTH!' | Set-Content '%REPO_DIR%\.env'"
+        call "%SCRIPTS_DIR%\CreateEnv.bat"
+        echo   %ESC%[1;32m  +   .env синхронизирован%ESC%[0m
     )
+    
     echo   %ESC%[1;32m  +   Auth: !NEW_AUTH!%ESC%[0m
+) else (
+    echo   %ESC%[1;33mОтменено.%ESC%[0m
 )
 timeout /t 2 /nobreak >nul
 goto settings_menu
 
+REM ============================================================================
+REM   set_pass — изменить пароль админа
+REM ============================================================================
 :set_pass
 cls
 echo.
 set /p "NEW_PASS=%ESC%[33mВведите новый admin пароль: %ESC%[0m"
 if "!NEW_PASS!"=="" goto settings_menu
 
-%PS_WRAPPER% -Command "(Get-Content '%CONFIG_FILE%') -replace '^ADMIN_PASSWORD=.*', 'ADMIN_PASSWORD=!NEW_PASS!' | Set-Content '%CONFIG_FILE%'"
-if exist "%REPO_DIR%\.env" (
-    %PS_WRAPPER% -Command "(Get-Content '%REPO_DIR%\.env') -replace '^ODYSSEUS_ADMIN_PASSWORD=.*', 'ODYSSEUS_ADMIN_PASSWORD=!NEW_PASS!' | Set-Content '%REPO_DIR%\.env'"
-)
+call "%SCRIPTS_DIR%\CreateConfig.bat" "!CUR_LLM!" "!CUR_LLM_API!" "!CUR_AUTH!" "!NEW_PASS!" "!CUR_PORT!" "!CUR_BROWSER!" "!CUR_SEARXNG!" "!CUR_SEARCH!" "!CUR_SEARCH_KEY!"
 
 echo   %ESC%[1;32m  +   Admin пароль обновлён%ESC%[0m
+
+if exist "%REPO_DIR%\.env" (
+    call "%SCRIPTS_DIR%\CreateEnv.bat"
+    echo   %ESC%[1;32m  +   .env синхронизирован%ESC%[0m
+)
+
 timeout /t 2 /nobreak >nul
 goto settings_menu
 
+REM ============================================================================
+REM   set_port — изменить порт приложения
+REM ============================================================================
 :set_port
 cls
 echo.
@@ -215,15 +278,21 @@ set /p "NEW_PORT=%ESC%[33mВведите порт (текущий: %CUR_PORT%): 
 set "NEW_PORT=%NEW_PORT: =%"
 if "!NEW_PORT!"=="" goto settings_menu
 
-%PS_WRAPPER% -Command "(Get-Content '%CONFIG_FILE%') -replace '^APP_PORT=.*', 'APP_PORT=!NEW_PORT!' | Set-Content '%CONFIG_FILE%'"
-if exist "%REPO_DIR%\.env" (
-    %PS_WRAPPER% -Command "(Get-Content '%REPO_DIR%\.env') -replace '^APP_PORT=.*', 'APP_PORT=!NEW_PORT!' | Set-Content '%REPO_DIR%\.env'"
-)
+call "%SCRIPTS_DIR%\CreateConfig.bat" "!CUR_LLM!" "!CUR_LLM_API!" "!CUR_AUTH!" "!CUR_PASS!" "!NEW_PORT!" "!CUR_BROWSER!" "!CUR_SEARXNG!" "!CUR_SEARCH!" "!CUR_SEARCH_KEY!"
 
 echo   %ESC%[1;32m  +   Порт обновлён: !NEW_PORT!%ESC%[0m
+
+if exist "%REPO_DIR%\.env" (
+    call "%SCRIPTS_DIR%\CreateEnv.bat"
+    echo   %ESC%[1;32m  +   .env синхронизирован%ESC%[0m
+)
+
 timeout /t 2 /nobreak >nul
 goto settings_menu
 
+REM ============================================================================
+REM   set_browser — вкл/выкл авто-открытие браузера
+REM ============================================================================
 :set_browser
 cls
 echo.
@@ -245,12 +314,19 @@ if "%br_choice%"=="1" (
     ) else (
         set "NEW_BR=1"
     )
-    %PS_WRAPPER% -Command "(Get-Content '%CONFIG_FILE%') -replace '^AUTO_OPEN_BROWSER=.*', 'AUTO_OPEN_BROWSER=!NEW_BR!' | Set-Content '%CONFIG_FILE%'"
+    
+    call "%SCRIPTS_DIR%\CreateConfig.bat" "!CUR_LLM!" "!CUR_LLM_API!" "!CUR_AUTH!" "!CUR_PASS!" "!CUR_PORT!" "!NEW_BR!" "!CUR_SEARXNG!" "!CUR_SEARCH!" "!CUR_SEARCH_KEY!"
+    
     echo   %ESC%[1;32m  +   Auto-browser: !NEW_BR!%ESC%[0m
+) else (
+    echo   %ESC%[1;33mОтменено.%ESC%[0m
 )
 timeout /t 2 /nobreak >nul
 goto settings_menu
 
+REM ============================================================================
+REM   set_search — настройка поискового API
+REM ============================================================================
 :set_search
 cls
 echo.
@@ -265,40 +341,31 @@ set "search_choice="
 set /p "search_choice=%ESC%[33mВыберите (1-5): %ESC%[0m"
 set "search_choice=%search_choice: =%"
 
-if "%search_choice%"=="1" set "NEW_SEARCH=none" & set "NEW_KEY="
-if "%search_choice%"=="2" set "NEW_SEARCH=brave" & set /p "NEW_KEY=%ESC%[33mBrave API Key: %ESC%[0m"
-if "%search_choice%"=="3" set "NEW_SEARCH=tavily" & set /p "NEW_KEY=%ESC%[33mTavily API Key: %ESC%[0m"
-if "%search_choice%"=="4" set "NEW_SEARCH=serper" & set /p "NEW_KEY=%ESC%[33mSerper API Key: %ESC%[0m"
-if "%search_choice%"=="5" set "NEW_SEARCH=google" & set /p "NEW_KEY=%ESC%[33mGoogle API Key: %ESC%[0m"
+set "NEW_SEARCH="
+set "NEW_KEY="
 
+if "%search_choice%"=="1" set "NEW_SEARCH=none" & set "NEW_KEY=" & goto save_search
+if "%search_choice%"=="2" set "NEW_SEARCH=brave" & set /p "NEW_KEY=%ESC%[33mBrave API Key: %ESC%[0m" & goto save_search
+if "%search_choice%"=="3" set "NEW_SEARCH=tavily" & set /p "NEW_KEY=%ESC%[33mTavily API Key: %ESC%[0m" & goto save_search
+if "%search_choice%"=="4" set "NEW_SEARCH=serper" & set /p "NEW_KEY=%ESC%[33mSerper API Key: %ESC%[0m" & goto save_search
+if "%search_choice%"=="5" set "NEW_SEARCH=google" & set /p "NEW_KEY=%ESC%[33mGoogle API Key: %ESC%[0m" & goto save_search
+
+echo   %ESC%[1;33mОтменено.%ESC%[0m
+timeout /t 1 /nobreak >nul
+goto settings_menu
+
+:save_search
 if not defined NEW_SEARCH goto settings_menu
 
-%PS_WRAPPER% -Command "(Get-Content '%CONFIG_FILE%') -replace '^SEARCH_API=.*', 'SEARCH_API=!NEW_SEARCH!' | Set-Content '%CONFIG_FILE%'"
-%PS_WRAPPER% -Command "(Get-Content '%CONFIG_FILE%') -replace '^SEARCH_API_KEY=.*', 'SEARCH_API_KEY=!NEW_KEY!' | Set-Content '%CONFIG_FILE%'"
-
-REM Обновляем .env
-if exist "%REPO_DIR%\.env" (
-    %PS_WRAPPER% -Command "(Get-Content '%REPO_DIR%\.env') -replace '^DATA_BRAVE_API_KEY=.*', '# DATA_BRAVE_API_KEY=' | Set-Content '%REPO_DIR%\.env'"
-    %PS_WRAPPER% -Command "(Get-Content '%REPO_DIR%\.env') -replace '^TAVILY_API_KEY=.*', '# TAVILY_API_KEY=' | Set-Content '%REPO_DIR%\.env'"
-    %PS_WRAPPER% -Command "(Get-Content '%REPO_DIR%\.env') -replace '^SERPER_API_KEY=.*', '# SERPER_API_KEY=' | Set-Content '%REPO_DIR%\.env'"
-    %PS_WRAPPER% -Command "(Get-Content '%REPO_DIR%\.env') -replace '^GOOGLE_API_KEY=.*', '# GOOGLE_API_KEY=' | Set-Content '%REPO_DIR%\.env'"
-
-    if "!NEW_SEARCH!"=="brave" (
-        %PS_WRAPPER% -Command "(Get-Content '%REPO_DIR%\.env') -replace '^# DATA_BRAVE_API_KEY=.*', 'DATA_BRAVE_API_KEY=!NEW_KEY!' | Set-Content '%REPO_DIR%\.env'"
-    )
-    if "!NEW_SEARCH!"=="tavily" (
-        %PS_WRAPPER% -Command "(Get-Content '%REPO_DIR%\.env') -replace '^# TAVILY_API_KEY=.*', 'TAVILY_API_KEY=!NEW_KEY!' | Set-Content '%REPO_DIR%\.env'"
-    )
-    if "!NEW_SEARCH!"=="serper" (
-        %PS_WRAPPER% -Command "(Get-Content '%REPO_DIR%\.env') -replace '^# SERPER_API_KEY=.*', 'SERPER_API_KEY=!NEW_KEY!' | Set-Content '%REPO_DIR%\.env'"
-    )
-    if "!NEW_SEARCH!"=="google" (
-        %PS_WRAPPER% -Command "(Get-Content '%REPO_DIR%\.env') -replace '^# GOOGLE_API_KEY=.*', 'GOOGLE_API_KEY=!NEW_KEY!' | Set-Content '%REPO_DIR%\.env'"
-        set /p "PSE_CX=%ESC%[33mGoogle PSE CX: %ESC%[0m"
-        %PS_WRAPPER% -Command "(Get-Content '%REPO_DIR%\.env') -replace '^GOOGLE_PSE_CX=.*', 'GOOGLE_PSE_CX=!PSE_CX!' | Set-Content '%REPO_DIR%\.env'"
-    )
-)
+call "%SCRIPTS_DIR%\CreateConfig.bat" "!CUR_LLM!" "!CUR_LLM_API!" "!CUR_AUTH!" "!CUR_PASS!" "!CUR_PORT!" "!CUR_BROWSER!" "!CUR_SEARXNG!" "!NEW_SEARCH!" "!NEW_KEY!"
 
 echo   %ESC%[1;32m  +   Search API обновлён: !NEW_SEARCH!%ESC%[0m
+
+REM Пересоздаём .env полностью
+if exist "%REPO_DIR%\.env" (
+    call "%SCRIPTS_DIR%\CreateEnv.bat"
+    echo   %ESC%[1;32m  +   .env синхронизирован%ESC%[0m
+)
+
 timeout /t 2 /nobreak >nul
 goto settings_menu

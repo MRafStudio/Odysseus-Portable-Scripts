@@ -59,19 +59,19 @@ REM ============================================================================
 set "APP_PORT=7000"
 set "AUTO_OPEN_BROWSER=1"
 set "CHROMADB_PORT=8100"
-set "OLLAMA_URL=http://127.0.0.1:11434/v1"
+set "LLM_API_URL=http://127.0.0.1:11434/v1"
 
 if exist "%CONFIG_FILE%" (
     for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"APP_PORT=" "%CONFIG_FILE%"') do set "APP_PORT=%%b"
     for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"AUTO_OPEN_BROWSER=" "%CONFIG_FILE%"') do set "AUTO_OPEN_BROWSER=%%b"
     for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"CHROMADB_PORT=" "%CONFIG_FILE%"') do set "CHROMADB_PORT=%%b"
-    for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"OLLAMA_URL=" "%CONFIG_FILE%"') do set "OLLAMA_URL=%%b"
+    for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"LLM_API_URL=" "%CONFIG_FILE%"') do set "LLM_API_URL=%%b"
 )
 
 set "APP_PORT=%APP_PORT: =%"
 set "AUTO_OPEN_BROWSER=%AUTO_OPEN_BROWSER: =%"
 set "CHROMADB_PORT=%CHROMADB_PORT: =%"
-set "OLLAMA_URL=%OLLAMA_URL: =%"
+set "LLM_API_URL=%LLM_API_URL: =%"
 
 cls
 echo.
@@ -81,20 +81,43 @@ echo  %ESC%[1;36m###############################################################
 echo.
 
 REM ============================================================================
+REM   Проверка / создание .env
+REM ============================================================================
+if not exist "%REPO_DIR%\.env" (
+    echo   %ESC%[1;33m  .   Создание .env файла...%ESC%[0m
+    call "%SCRIPTS_DIR%\CreateEnv.bat"
+    if exist "%REPO_DIR%\.env" (
+        echo   %ESC%[1;32m  +   .env создан%ESC%[0m
+    ) else (
+        echo   %ESC%[1;31m  [ПРЕДУПРЕЖДЕНИЕ] .env не создан%ESC%[0m
+    )
+    echo.
+)
+
+REM ============================================================================
 REM   Проверка Ollama (или другого LLM backend)
 REM ============================================================================
 echo   %ESC%[1;33mПроверка LLM backend...%ESC%[0m
 
-REM Определяем хост и порт из OLLAMA_URL
+REM Парсим URL: http://host:port/v1 или https://host:port/v1
 set "LLM_HOST=127.0.0.1"
 set "LLM_PORT=11434"
 
-REM Парсим URL: http://host:port/v1
-for /f "tokens=2,3 delims=:/" %%a in ("!OLLAMA_URL!") do (
+REM Убираем протокол (http:// или https://)
+set "LLM_URL_TMP=!LLM_API_URL:http://=!"
+set "LLM_URL_TMP=!LLM_URL_TMP:https://=!"
+
+REM Теперь формат: host:port/v1
+for /f "tokens=1,2 delims=:/" %%a in ("!LLM_URL_TMP!") do (
     set "LLM_HOST=%%a"
     set "LLM_PORT=%%b"
 )
 set "LLM_PORT=!LLM_PORT:/v1=!"
+
+REM Если порт не распарсился (например, для https://api.openai.com/v1), ставим дефолт
+if "!LLM_PORT!"=="v1" set "LLM_PORT=443"
+if "!LLM_PORT!"=="" set "LLM_PORT=80"
+if "!LLM_API_URL:~0,5!"=="https" if "!LLM_PORT!"=="80" set "LLM_PORT=443"
 
 for /f "tokens=*" %%a in ('%PS_WRAPPER% -Command "try { $c = New-Object System.Net.Sockets.TcpClient; $c.Connect('!LLM_HOST!', !LLM_PORT!); $c.Close(); Write-Host 'OK' } catch { Write-Host 'NO' }"') do set "LLM_CHK=%%a"
 
@@ -122,7 +145,11 @@ if "!CHROMADB_CHK!"=="OK" (
     if not exist "!CHROMADB_DATA!" mkdir "!CHROMADB_DATA!"
 
     REM Запускаем ChromaDB через chroma.exe (не через python -m)
-    start "" /MIN "%PYTHON_DIR%\Scripts\chroma.exe" run --path "!CHROMADB_DATA!" --port %CHROMADB_PORT% --host 127.0.0.1
+    if exist "%PYTHON_DIR%\Scripts\chroma.exe" (
+        start "" /MIN "%PYTHON_DIR%\Scripts\chroma.exe" run --path "!CHROMADB_DATA!" --port %CHROMADB_PORT% --host 127.0.0.1
+    ) else (
+        start "" /MIN "%PYTHON%" -m chromadb run --path "!CHROMADB_DATA!" --port %CHROMADB_PORT% --host 127.0.0.1
+    )
 
     REM Ждём запуска
     echo   %ESC%[1;33m  -   Ожидание ChromaDB...%ESC%[0m

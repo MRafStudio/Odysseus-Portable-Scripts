@@ -11,7 +11,7 @@ REM ============================================================================
 REM   Параметры с дефолтами (9 параметров максимум в batch)
 REM ============================================================================
 set "LLM_BACKEND=%~1"
-set "OLLAMA_URL=%~2"
+set "LLM_API_URL=%~2"
 set "AUTH_ENABLED=%~3"
 set "ADMIN_PASSWORD=%~4"
 set "APP_PORT=%~5"
@@ -21,7 +21,7 @@ set "SEARCH_API=%~8"
 set "SEARCH_API_KEY=%~9"
 
 if "!LLM_BACKEND!"=="" set "LLM_BACKEND=ollama"
-if "!OLLAMA_URL!"=="" set "OLLAMA_URL=http://127.0.0.1:11434/v1"
+if "!LLM_API_URL!"=="" set "LLM_API_URL=http://127.0.0.1:11434/v1"
 if "!AUTH_ENABLED!"=="" set "AUTH_ENABLED=true"
 if "!ADMIN_PASSWORD!"=="" set "ADMIN_PASSWORD=admin"
 if "!APP_PORT!"=="" set "APP_PORT=7000"
@@ -42,7 +42,7 @@ REM ============================================================================
 >> "%CONFIG_FILE%" echo.
 >> "%CONFIG_FILE%" echo ; --- LLM Configuration ---
 >> "%CONFIG_FILE%" echo LLM_BACKEND=!LLM_BACKEND!
->> "%CONFIG_FILE%" echo OLLAMA_URL=!OLLAMA_URL!
+>> "%CONFIG_FILE%" echo LLM_API_URL=!LLM_API_URL!
 >> "%CONFIG_FILE%" echo.
 >> "%CONFIG_FILE%" echo ; --- Auth ^& Security ---
 >> "%CONFIG_FILE%" echo AUTH_ENABLED=!AUTH_ENABLED!

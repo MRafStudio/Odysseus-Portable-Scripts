@@ -105,7 +105,7 @@ if not exist "%CONFIG_FILE%" (
  REM Проверяем наличие ключевых параметров
  findstr /B /C:"LLM_BACKEND=" "%CONFIG_FILE%" >nul 2>nul
  if !errorlevel! neq 0 set "CONFIG_NEED_CREATE=1"
- findstr /B /C:"OLLAMA_URL=" "%CONFIG_FILE%" >nul 2>nul
+ findstr /B /C:"LLM_API_URL=" "%CONFIG_FILE%" >nul 2>nul
  if !errorlevel! neq 0 set "CONFIG_NEED_CREATE=1"
  findstr /B /C:"CHROMADB_PORT=" "%CONFIG_FILE%" >nul 2>nul
  if !errorlevel! neq 0 set "CONFIG_NEED_CREATE=1"
@@ -116,7 +116,7 @@ if "!CONFIG_NEED_CREATE!"=="1" (
  echo %ESC%[1;33m⚠  Config.ini устарел. Обновление с сохранением настроек...%ESC%[0m
 
  set "OLD_LLM_BACKEND="
- set "OLD_OLLAMA_URL="
+ set "OLD_LLM_API_URL="
  set "OLD_AUTH_ENABLED="
  set "OLD_ADMIN_PASSWORD="
  set "OLD_APP_PORT="
@@ -126,7 +126,7 @@ if "!CONFIG_NEED_CREATE!"=="1" (
  set "OLD_SEARCH_API_KEY="
 
  for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"LLM_BACKEND=" "%CONFIG_FILE%"') do set "OLD_LLM_BACKEND=%%b"
- for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"OLLAMA_URL=" "%CONFIG_FILE%"') do set "OLD_OLLAMA_URL=%%b"
+ for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"LLM_API_URL=" "%CONFIG_FILE%"') do set "OLD_LLM_API_URL=%%b"
  for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"AUTH_ENABLED=" "%CONFIG_FILE%"') do set "OLD_AUTH_ENABLED=%%b"
  for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"ADMIN_PASSWORD=" "%CONFIG_FILE%"') do set "OLD_ADMIN_PASSWORD=%%b"
  for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"APP_PORT=" "%CONFIG_FILE%"') do set "OLD_APP_PORT=%%b"
@@ -136,7 +136,7 @@ if "!CONFIG_NEED_CREATE!"=="1" (
  for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"SEARCH_API_KEY=" "%CONFIG_FILE%"') do set "OLD_SEARCH_API_KEY=%%b"
 
  set "OLD_LLM_BACKEND=%OLD_LLM_BACKEND: =%"
- set "OLD_OLLAMA_URL=%OLD_OLLAMA_URL: =%"
+ set "OLD_LLM_API_URL=%OLD_LLM_API_URL: =%"
  set "OLD_AUTH_ENABLED=%OLD_AUTH_ENABLED: =%"
  set "OLD_ADMIN_PASSWORD=%OLD_ADMIN_PASSWORD: =%"
  set "OLD_APP_PORT=%OLD_APP_PORT: =%"
@@ -146,7 +146,7 @@ if "!CONFIG_NEED_CREATE!"=="1" (
  set "OLD_SEARCH_API_KEY=%OLD_SEARCH_API_KEY: =%"
 
  if "!OLD_LLM_BACKEND!"=="" set "OLD_LLM_BACKEND=ollama"
- if "!OLD_OLLAMA_URL!"=="" set "OLD_OLLAMA_URL=http://127.0.0.1:11434/v1"
+ if "!OLD_LLM_API_URL!"=="" set "OLD_LLM_API_URL=http://127.0.0.1:11434/v1"
  if "!OLD_AUTH_ENABLED!"=="" set "OLD_AUTH_ENABLED=true"
  if "!OLD_ADMIN_PASSWORD!"=="" set "OLD_ADMIN_PASSWORD=admin"
  if "!OLD_APP_PORT!"=="" set "OLD_APP_PORT=7000"
@@ -155,7 +155,7 @@ if "!CONFIG_NEED_CREATE!"=="1" (
  if "!OLD_SEARCH_API!"=="" set "OLD_SEARCH_API=none"
  if "!OLD_SEARCH_API_KEY!"=="" set "OLD_SEARCH_API_KEY="
 
- call "%SCRIPTS_DIR%\CreateConfig.bat" "!OLD_LLM_BACKEND!" "!OLD_OLLAMA_URL!" "!OLD_AUTH_ENABLED!" "!OLD_ADMIN_PASSWORD!" "!OLD_APP_PORT!" "!OLD_AUTO_OPEN_BROWSER!" "!OLD_SEARXNG_ENABLED!" "!OLD_SEARCH_API!" "!OLD_SEARCH_API_KEY!"
+ call "%SCRIPTS_DIR%\CreateConfig.bat" "!OLD_LLM_BACKEND!" "!OLD_LLM_API_URL!" "!OLD_AUTH_ENABLED!" "!OLD_ADMIN_PASSWORD!" "!OLD_APP_PORT!" "!OLD_AUTO_OPEN_BROWSER!" "!OLD_SEARXNG_ENABLED!" "!OLD_SEARCH_API!" "!OLD_SEARCH_API_KEY!"
 
  ) else (
  echo %ESC%[1;33m-%ESC%[0m %ESC%[1mСоздание Config.ini...%ESC%[0m
@@ -169,7 +169,7 @@ REM ============================================================================
 REM Чтение Config.ini
 REM ============================================================================
 set "LLM_BACKEND=ollama"
-set "OLLAMA_URL=http://127.0.0.1:11434/v1"
+set "LLM_API_URL=http://127.0.0.1:11434/v1"
 set "AUTH_ENABLED=true"
 set "ADMIN_PASSWORD=admin"
 set "APP_PORT=7000"
@@ -180,7 +180,7 @@ set "SEARCH_API_KEY="
 
 if exist "%CONFIG_FILE%" (
  for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"LLM_BACKEND=" "%CONFIG_FILE%"') do set "LLM_BACKEND=%%b"
- for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"OLLAMA_URL=" "%CONFIG_FILE%"') do set "OLLAMA_URL=%%b"
+ for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"LLM_API_URL=" "%CONFIG_FILE%"') do set "LLM_API_URL=%%b"
  for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"AUTH_ENABLED=" "%CONFIG_FILE%"') do set "AUTH_ENABLED=%%b"
  for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"ADMIN_PASSWORD=" "%CONFIG_FILE%"') do set "ADMIN_PASSWORD=%%b"
  for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"APP_PORT=" "%CONFIG_FILE%"') do set "APP_PORT=%%b"
@@ -191,7 +191,7 @@ if exist "%CONFIG_FILE%" (
 )
 
 set "LLM_BACKEND=%LLM_BACKEND: =%"
-set "OLLAMA_URL=%OLLAMA_URL: =%"
+set "LLM_API_URL=%LLM_API_URL: =%"
 set "AUTH_ENABLED=%AUTH_ENABLED: =%"
 set "ADMIN_PASSWORD=%ADMIN_PASSWORD: =%"
 set "APP_PORT=%APP_PORT: =%"
@@ -200,11 +200,24 @@ set "SEARXNG_ENABLED=%SEARXNG_ENABLED: =%"
 set "SEARCH_API=%SEARCH_API: =%"
 set "SEARCH_API_KEY=%SEARCH_API_KEY: =%"
 
+REM ============================================================================
+REM   Проверка / создание .env
+REM ============================================================================
+if not exist "%REPO_DIR%\.env" (
+    echo   %ESC%[1;33m  .   Создание .env файла...%ESC%[0m
+    call "%SCRIPTS_DIR%\CreateEnv.bat"
+    if exist "%REPO_DIR%\.env" (
+        echo   %ESC%[1;32m  +   .env создан%ESC%[0m
+    ) else (
+        echo   %ESC%[1;31m  [ПРЕДУПРЕЖДЕНИЕ] .env не создан%ESC%[0m
+    )
+)
+
 :menu
 REM Перечитываем Config.ini (мог измениться)
 if exist "%CONFIG_FILE%" (
  for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"LLM_BACKEND=" "%CONFIG_FILE%"') do set "LLM_BACKEND=%%b"
- for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"OLLAMA_URL=" "%CONFIG_FILE%"') do set "OLLAMA_URL=%%b"
+ for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"LLM_API_URL=" "%CONFIG_FILE%"') do set "LLM_API_URL=%%b"
  for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"AUTH_ENABLED=" "%CONFIG_FILE%"') do set "AUTH_ENABLED=%%b"
  for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"ADMIN_PASSWORD=" "%CONFIG_FILE%"') do set "ADMIN_PASSWORD=%%b"
  for /f "tokens=1,2 delims==" %%a in ('findstr /B /C:"APP_PORT=" "%CONFIG_FILE%"') do set "APP_PORT=%%b"
@@ -215,7 +228,7 @@ if exist "%CONFIG_FILE%" (
 )
 
 set "LLM_BACKEND=%LLM_BACKEND: =%"
-set "OLLAMA_URL=%OLLAMA_URL: =%"
+set "LLM_API_URL=%LLM_API_URL: =%"
 set "AUTH_ENABLED=%AUTH_ENABLED: =%"
 set "ADMIN_PASSWORD=%ADMIN_PASSWORD: =%"
 set "APP_PORT=%APP_PORT: =%"
@@ -317,13 +330,13 @@ REM Подсчёт — 4 компонента (Python, Repo, Deps, Node)
 set /a "INSTALLED_COUNT=!PYTHON_INSTALLED!+!REPO_INSTALLED!+!DEPS_INSTALLED!+!NODE_INSTALLED!"
 
 echo.
-echo %ESC%[1;33mLLM%ESC%[0m%ESC%[2m^:%ESC%[0m %ESC%[1;33m%LLM_BACKEND%%ESC%[0m %ESC%[2m^|%ESC%[0m %ESC%[1;33m%OLLAMA_URL%%ESC%[0m
+echo %ESC%[1;33mLLM%ESC%[0m%ESC%[2m^:%ESC%[0m %ESC%[1;33m%LLM_BACKEND%%ESC%[0m %ESC%[2m^|%ESC%[0m %ESC%[1;33m%LLM_API_URL%%ESC%[0m
 echo %ESC%[1;33mAuth%ESC%[0m%ESC%[2m^:%ESC%[0m %ESC%[1;33m%AUTH_ENABLED%%ESC%[0m %ESC%[2m^|%ESC%[0m %ESC%[1;33mПорт%ESC%[0m%ESC%[2m^:%ESC%[0m %ESC%[1;33m%APP_PORT%%ESC%[0m %ESC%[2m^|%ESC%[0m %ESC%[1;33mSearch%ESC%[0m%ESC%[2m^:%ESC%[0m %ESC%[1;33m%SEARCH_API%%ESC%[0m
 echo.
 
 echo %ESC%[1;37m[1]%ESC%[0m %ESC%[1mУстановка / Обновление компонентов%ESC%[0m
 echo %ESC%[1;37m[2]%ESC%[0m %ESC%[1mНастройки%ESC%[0m %ESC%[2m(LLM, порт, auth, поиск)%ESC%[0m
-echo %ESC%[1;37m[3]%ESC%[0m %ESC%[1mИнструменты разработчика%ESC%[0m %ESC%[2m(Git, обновление, очистка)%ESC%[0m
+echo %ESC%[1;37m[3]%ESC%[0m %ESC%[1mИнструменты%ESC%[0m %ESC%[2m(Git, обновление, очистка)%ESC%[0m
 echo.
 
 if "!INSTALLED_COUNT!"=="4" (
